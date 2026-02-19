@@ -1,0 +1,139 @@
+/* pages/login/login.wxss */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 100rpx 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 80rpx;
+}
+
+.logo-img {
+  width: 160rpx;
+  height: 160rpx;
+  background: white;
+  border-radius: 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.app-name {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.login-box {
+  width: 100%;
+  background: white;
+  border-radius: 20rpx;
+  padding: 60rpx 40rpx;
+}
+
+.input-group {
+  margin-bottom: 30rpx;
+}
+
+.input {
+  width: 100%;
+  height: 88rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 0 30rpx;
+  font-size: 28rpx;
+}
+
+.code-group {
+  display: flex;
+  gap: 20rpx;
+}
+
+.code-group .input {
+  flex: 1;
+}
+
+.code-btn {
+  width: 200rpx;
+  height: 88rpx;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  line-height: 88rpx;
+}
+
+.code-btn[disabled] {
+  background: #ccc;
+}
+
+.login-btn {
+  width: 100%;
+  height: 88rpx;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  margin-top: 20rpx;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 40rpx 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: #eee;
+}
+
+.divider-text {
+  position: relative;
+  background: white;
+  padding: 0 20rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.wx-login-btn {
+  width: 100%;
+  height: 88rpx;
+  background: #07c160;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.wx-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.agreement {
+  margin-top: 40rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.agreement .link {
+  color: white;
+  text-decoration: underline;
+}

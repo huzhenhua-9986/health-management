@@ -1,0 +1,62 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" />
+      <view class="info">
+        <text class="name">{{userInfo.nickName || '未登录'}}</text>
+        <text class="tip">健康每一天</text>
+      </view>
+    </view>
+    <view class="score">
+      <text class="score-value">{{healthScore}}</text>
+      <text class="score-label">健康分</text>
+    </view>
+  </view>
+
+  <!-- 今日数据概览 -->
+  <view class="today-data">
+    <view class="section-title">今日数据</view>
+    <view class="data-grid">
+      <view class="data-item" bindtap="goToData">
+        <view class="icon steps">👣</view>
+        <view class="value">{{todaySteps}}</view>
+        <view class="label">步数</view>
+      </view>
+      <view class="data-item" bindtap="goToData">
+        <view class="icon sleep">😴</view>
+        <view class="value">{{todaySleep}}h</view>
+        <view class="label">睡眠</view>
+      </view>
+      <view class="data-item" bindtap="goToData">
+        <view class="icon calories">🔥</view>
+        <view class="value">{{todayCalories}}</view>
+        <view class="label">热量(kcal)</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷功能 -->
+  <view class="quick-actions">
+    <view class="section-title">快捷功能</view>
+    <view class="action-grid">
+      <view class="action-item" bindtap="goToInput">
+        <view class="action-icon">📝</view>
+        <text>数据录入</text>
+      </view>
+      <view class="action-item" bindtap="goToData">
+        <view class="action-icon">📊</view>
+        <text>数据查看</text>
+      </view>
+      <view class="action-item" bindtap="goToReport">
+        <view class="action-icon">📋</view>
+        <text>健康报告</text>
+      </view>
+      <view class="action-item">
+        <view class="action-icon">⚙️</view>
+        <text>设备同步</text>
+      </view>
+    </view>
+  </view>
+</view>

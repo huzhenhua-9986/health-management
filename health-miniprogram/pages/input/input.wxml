@@ -1,0 +1,135 @@
+<!--pages/input/input.wxml-->
+<view class="container">
+  <!-- 类型选择 -->
+  <view class="type-selector">
+    <view class="selector-label">数据类型</view>
+    <view class="type-list">
+      <view
+        class="type-item {{type === item.value ? 'active' : ''}}"
+        wx:for="{{typeOptions}}"
+        wx:key="value"
+        bindtap="onTypeSelect"
+        data-value="{{item.value}}"
+      >
+        {{item.label}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 健康数据表单 -->
+  <view class="form-container" wx:if="{{type === 'health'}}">
+    <view class="form-title">健康数据录入</view>
+
+    <view class="form-group">
+      <view class="label">数据类型</view>
+      <picker class="picker" mode="selector" range="{{['血压', '血糖', '心率', '体温', '体重']}}" range-key="{{item}}" value="0" bindchange="onHealthDataTypeChange">
+        <view class="picker-value">{{['血压', '血糖', '心率', '体温', '重量'][healthForm.data_type === 'blood_pressure' ? 0 : healthForm.data_type === 'blood_sugar' ? 1 : healthForm.data_type === 'heart_rate' ? 2 : healthForm.data_type === 'temperature' ? 3 : 4]}}</view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <view class="label">数值</view>
+      <input class="input" type="digit" placeholder="请输入数值" value="{{healthForm.data_value}}" bindinput="onHealthValueInput" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">备注</view>
+      <textarea class="textarea" placeholder="请输入备注（可选）" value="{{healthForm.notes}}" bindinput="onHealthNotesInput" />
+    </view>
+
+    <button class="submit-btn" bindtap="saveHealthData">保存</button>
+  </view>
+
+  <!-- 运动数据表单 -->
+  <view class="form-container" wx:if="{{type === 'exercise'}}">
+    <view class="form-title">运动数据录入</view>
+
+    <view class="form-group">
+      <view class="label">步数</view>
+      <input class="input" type="number" placeholder="请输入步数" value="{{exerciseForm.steps}}" bindinput="onExerciseInput" data-field="steps" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">距离(km)</view>
+      <input class="input" type="digit" placeholder="请输入距离" value="{{exerciseForm.distance}}" bindinput="onExerciseInput" data-field="distance" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">热量消耗(kcal)</view>
+      <input class="input" type="number" placeholder="请输入热量" value="{{exerciseForm.calories}}" bindinput="onExerciseInput" data-field="calories" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">运动时长(分钟)</view>
+      <input class="input" type="number" placeholder="请输入时长" value="{{exerciseForm.duration}}" bindinput="onExerciseInput" data-field="duration" />
+    </view>
+
+    <button class="submit-btn" bindtap="saveExerciseData">保存</button>
+  </view>
+
+  <!-- 睡眠数据表单 -->
+  <view class="form-container" wx:if="{{type === 'sleep'}}">
+    <view class="form-title">睡眠数据录入</view>
+
+    <view class="form-group">
+      <view class="label">总睡眠时长(小时)</view>
+      <input class="input" type="digit" placeholder="请输入睡眠时长" value="{{sleepForm.sleep_duration}}" bindinput="onSleepInput" data-field="sleep_duration" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">深睡时长(小时)</view>
+      <input class="input" type="digit" placeholder="请输入深睡时长" value="{{sleepForm.deep_sleep_duration}}" bindinput="onSleepInput" data-field="deep_sleep_duration" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">浅睡时长(小时)</view>
+      <input class="input" type="digit" placeholder="请输入浅睡时长" value="{{sleepForm.light_sleep_duration}}" bindinput="onSleepInput" data-field="light_sleep_duration" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">睡眠质量(1-10)</view>
+      <slider class="slider" min="1" max="10" value="{{sleepForm.sleep_quality}}" bindchange="onSleepQualityChange" show-value />
+    </view>
+
+    <button class="submit-btn" bindtap="saveSleepData">保存</button>
+  </view>
+
+  <!-- 饮食数据表单 -->
+  <view class="form-container" wx:if="{{type === 'diet'}}">
+    <view class="form-title">饮食记录</view>
+
+    <view class="form-group">
+      <view class="label">餐型</view>
+      <picker class="picker" mode="selector" range="{{['早餐', '午餐', '晚餐', '加餐']}}" bindchange="onDietTypeChange">
+        <view class="picker-value">{{dietForm.meal_type === 'breakfast' ? '早餐' : dietForm.meal_type === 'lunch' ? '午餐' : dietForm.meal_type === 'dinner' ? '晚餐' : '加餐'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <view class="label">食物名称</view>
+      <input class="input" placeholder="请输入食物名称" value="{{dietForm.food_name}}" bindinput="onDietInput" data-field="food_name" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">热量(kcal)</view>
+      <input class="input" type="number" placeholder="请输入热量" value="{{dietForm.calories}}" bindinput="onDietInput" data-field="calories" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">蛋白质(g)</view>
+      <input class="input" type="number" placeholder="请输入蛋白质含量" value="{{dietForm.protein}}" bindinput="onDietInput" data-field="protein" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">脂肪(g)</view>
+      <input class="input" type="number" placeholder="请输入脂肪含量" value="{{dietForm.fat}}" bindinput="onDietInput" data-field="fat" />
+    </view>
+
+    <view class="form-group">
+      <view class="label">碳水(g)</view>
+      <input class="input" type="number" placeholder="请输入碳水含量" value="{{dietForm.carbohydrate}}" bindinput="onDietInput" data-field="carbohydrate" />
+    </view>
+
+    <button class="submit-btn" bindtap="saveDietData">保存</button>
+  </view>
+</view>

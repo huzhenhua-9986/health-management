@@ -1,0 +1,112 @@
+/* pages/index/index.wxss */
+.container {
+  padding: 20rpx;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.user-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: white;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.tip {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.score {
+  text-align: center;
+}
+
+.score-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+}
+
+.score-label {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.today-data, .quick-actions {
+  margin-top: 30rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.data-grid, .action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+.data-item, .action-item {
+  background: white;
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
+  text-align: center;
+}
+
+.icon {
+  font-size: 48rpx;
+  margin-bottom: 10rpx;
+}
+
+.data-item .value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin: 10rpx 0;
+}
+
+.data-item .label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.action-icon {
+  font-size: 48rpx;
+  margin-bottom: 10rpx;
+}
+
+.action-item text {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+}

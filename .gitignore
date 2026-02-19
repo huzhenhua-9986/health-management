@@ -1,0 +1,101 @@
+# ==========================================
+# 健康管理系统 - .gitignore
+# ==========================================
+
+# ==========================================
+# 管理后台
+# ==========================================
+
+# 依赖
+node_modules/
+dist/
+.nuxt/
+.cache/
+.vuepress/dist/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# 构建产物
+dist/
+dist-ssr/
+*.local
+
+# 测试覆盖率
+coverage/
+*.lcov
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# ==========================================
+# 小程序
+# ==========================================
+
+# 微信小程序
+health-miniprogram/miniprogram_npm/
+health-miniprogram/.DS_Store
+
+# ==========================================
+# 通用
+# ==========================================
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 备份文件
+*.bak
+*.backup
+*.swp
+*~
+
+# 压缩文件
+*.zip
+*.rar
+*.tar
+*.gz
+
+# ==========================================
+# 敏感文件
+# ==========================================
+
+# 密钥和证书
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# 配置文件（包含敏感信息）
+.env.production
+config.local.*
