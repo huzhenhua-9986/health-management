@@ -1,4 +1,0 @@
-{
-  "buildCommand": "cd health-admin && npm run build",
-  "outputDirectory": "health-admin/dist"
-}
