@@ -15,87 +15,99 @@
   <view class="content">
     <!-- 健康数据 -->
     <view class="data-list" wx:if="{{activeTab === 0}}">
-      <view class="data-item" wx:for="{{healthData}}" wx:key="id" bindtap="viewDetail" data-item="{{item}}">
-        <view class="data-header">
-          <text class="data-type">{{item.data_type}}</text>
-          <text class="data-date">{{item.recorded_at}}</text>
+      <view class="data-item" wx:for="{{healthData}}" wx:key="id">
+        <view class="data-content" bindtap="viewDetail" data-item="{{item}}">
+          <view class="data-header">
+            <text class="data-type">{{item.data_type}}</text>
+            <text class="data-date">{{item.recorded_at}}</text>
+          </view>
+          <view class="data-value">
+            <text class="value">{{item.data_value}}</text>
+            <text class="unit">{{item.unit}}</text>
+          </view>
+          <view class="data-source" wx:if="{{item.notes}}">{{item.notes}}</view>
         </view>
-        <view class="data-value">
-          <text class="value">{{item.data_value}}</text>
-          <text class="unit">{{item.unit}}</text>
-        </view>
-        <view class="data-source" wx:if="{{item.notes}}">{{item.notes}}</view>
+        <view class="delete-btn" catchtap="deleteData" data-item="{{item}}" data-index="{{index}}" data-type="health">删除</view>
       </view>
       <view class="empty" wx:if="{{healthData.length === 0}}">暂无数据</view>
     </view>
 
     <!-- 运动数据 -->
     <view class="data-list" wx:if="{{activeTab === 1}}">
-      <view class="data-item" wx:for="{{exerciseData}}" wx:key="id" bindtap="viewDetail" data-item="{{item}}">
-        <view class="data-header">
-          <text class="data-type">运动</text>
-          <text class="data-date">{{item.exercise_date}}</text>
+      <view class="data-item" wx:for="{{exerciseData}}" wx:key="id">
+        <view class="data-content" bindtap="viewDetail" data-item="{{item}}">
+          <view class="data-header">
+            <text class="data-type">运动</text>
+            <text class="data-date">{{item.exercise_date}}</text>
+          </view>
+          <view class="exercise-grid">
+            <view class="grid-item">
+              <text class="label">步数</text>
+              <text class="value">{{item.steps}}</text>
+            </view>
+            <view class="grid-item">
+              <text class="label">距离</text>
+              <text class="value">{{item.distance}}km</text>
+            </view>
+            <view class="grid-item">
+              <text class="label">热量</text>
+              <text class="value">{{item.calories}}kcal</text>
+            </view>
+          </view>
         </view>
-        <view class="exercise-grid">
-          <view class="grid-item">
-            <text class="label">步数</text>
-            <text class="value">{{item.steps}}</text>
-          </view>
-          <view class="grid-item">
-            <text class="label">距离</text>
-            <text class="value">{{item.distance}}km</text>
-          </view>
-          <view class="grid-item">
-            <text class="label">热量</text>
-            <text class="value">{{item.calories}}kcal</text>
-          </view>
-        </view>
+        <view class="delete-btn" catchtap="deleteData" data-item="{{item}}" data-index="{{index}}" data-type="exercise">删除</view>
       </view>
       <view class="empty" wx:if="{{exerciseData.length === 0}}">暂无数据</view>
     </view>
 
     <!-- 睡眠数据 -->
     <view class="data-list" wx:if="{{activeTab === 2}}">
-      <view class="data-item" wx:for="{{sleepData}}" wx:key="id" bindtap="viewDetail" data-item="{{item}}">
-        <view class="data-header">
-          <text class="data-type">睡眠</text>
-          <text class="data-date">{{item.sleep_date}}</text>
+      <view class="data-item" wx:for="{{sleepData}}" wx:key="id">
+        <view class="data-content" bindtap="viewDetail" data-item="{{item}}">
+          <view class="data-header">
+            <text class="data-type">睡眠</text>
+            <text class="data-date">{{item.sleep_date}}</text>
+          </view>
+          <view class="sleep-grid">
+            <view class="grid-item">
+              <text class="label">总时长</text>
+              <text class="value">{{item.sleep_duration / 60}}h</text>
+            </view>
+            <view class="grid-item">
+              <text class="label">深睡</text>
+              <text class="value">{{item.deep_sleep_duration / 60}}h</text>
+            </view>
+            <view class="grid-item">
+              <text class="label">质量</text>
+              <text class="value">{{item.sleep_quality}}分</text>
+            </view>
+          </view>
         </view>
-        <view class="sleep-grid">
-          <view class="grid-item">
-            <text class="label">总时长</text>
-            <text class="value">{{item.sleep_duration / 60}}h</text>
-          </view>
-          <view class="grid-item">
-            <text class="label">深睡</text>
-            <text class="value">{{item.deep_sleep_duration / 60}}h</text>
-          </view>
-          <view class="grid-item">
-            <text class="label">质量</text>
-            <text class="value">{{item.sleep_quality}}分</text>
-          </view>
-        </view>
+        <view class="delete-btn" catchtap="deleteData" data-item="{{item}}" data-index="{{index}}" data-type="sleep">删除</view>
       </view>
       <view class="empty" wx:if="{{sleepData.length === 0}}">暂无数据</view>
     </view>
 
     <!-- 饮食数据 -->
     <view class="data-list" wx:if="{{activeTab === 3}}">
-      <view class="data-item" wx:for="{{dietData}}" wx:key="id" bindtap="viewDetail" data-item="{{item}}">
-        <view class="data-header">
-          <text class="data-type">{{item.food_name}}</text>
-          <text class="data-date">{{item.meal_time}}</text>
-        </view>
-        <view class="diet-info">
-          <view class="info-item">
-            <text class="label">餐型</text>
-            <text class="value">{{item.meal_type}}</text>
+      <view class="data-item" wx:for="{{dietData}}" wx:key="id">
+        <view class="data-content" bindtap="viewDetail" data-item="{{item}}">
+          <view class="data-header">
+            <text class="data-type">{{item.food_name}}</text>
+            <text class="data-date">{{item.meal_time}}</text>
           </view>
-          <view class="info-item" wx:if="{{item.calories}}">
-            <text class="label">热量</text>
-            <text class="value">{{item.calories}}kcal</text>
+          <view class="diet-info">
+            <view class="info-item">
+              <text class="label">餐型</text>
+              <text class="value">{{item.meal_type}}</text>
+            </view>
+            <view class="info-item" wx:if="{{item.calories}}">
+              <text class="label">热量</text>
+              <text class="value">{{item.calories}}kcal</text>
+            </view>
           </view>
         </view>
+        <view class="delete-btn" catchtap="deleteData" data-item="{{item}}" data-index="{{index}}" data-type="diet">删除</view>
       </view>
       <view class="empty" wx:if="{{dietData.length === 0}}">暂无数据</view>
     </view>

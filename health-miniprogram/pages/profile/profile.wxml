@@ -5,7 +5,30 @@
     <image class="avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" />
     <view class="user-info">
       <text class="name">{{userInfo.nickName || '未登录'}}</text>
-      <text class="phone">{{userInfo.phone || ''}}</text>
+      <text class="phone" wx:if="{{userInfo.phone}}">{{userInfo.phone}}</text>
+    </view>
+  </view>
+
+  <!-- 数据统计 -->
+  <view class="stats-card">
+    <view class="stats-title">我的数据</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalHealth}}</text>
+        <text class="stat-label">健康记录</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalExercise}}</text>
+        <text class="stat-label">运动记录</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalSleep}}</text>
+        <text class="stat-label">睡眠记录</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalDiet}}</text>
+        <text class="stat-label">饮食记录</text>
+      </view>
     </view>
   </view>
 
@@ -35,10 +58,29 @@
       <text class="menu-arrow">›</text>
     </view>
 
+    <view class="menu-item" bindtap="clearCache">
+      <view class="menu-left">
+        <text class="menu-icon">🗑️</text>
+        <text class="menu-label">清除缓存</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 系统设置 -->
+  <view class="menu-list">
     <view class="menu-item" bindtap="goToSettings">
       <view class="menu-left">
         <text class="menu-icon">⚙️</text>
         <text class="menu-label">系统设置</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-item" bindtap="goToFeedback">
+      <view class="menu-left">
+        <text class="menu-icon">💬</text>
+        <text class="menu-label">意见反馈</text>
       </view>
       <text class="menu-arrow">›</text>
     </view>

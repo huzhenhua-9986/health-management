@@ -1,16 +1,38 @@
 # 健康管理系统部署指南
 
-本文档指导您完成健康管理系统的 Supabase 配置和管理后台部署。
+本文档指导您完成健康管理系统的完整部署，包括后端 API、管理后台和微信小程序。
 
 ---
 
 ## 📋 目录
 
-1. [Supabase 数据库配置](#1-supabase-数据库配置)
-2. [管理后台本地运行](#2-管理后台本地运行)
-3. [部署到 Vercel](#3-部署到-vercel)
-4. [测试系统功能](#4-测试系统功能)
-5. [常见问题](#5-常见问题)
+1. [部署架构概览](#部署架构概览)
+2. [Supabase 数据库配置](#2-supabase-数据库配置)
+3. [后端 API 部署](#3-后端-api-部署)
+4. [管理后台部署](#4-管理后台部署)
+5. [微信小程序部署](#5-微信小程序部署)
+6. [测试验证](#6-测试验证)
+7. [常见问题](#7-常见问题)
+
+---
+
+## 部署架构概览
+
+```
+┌─────────────┐      ┌─────────────┐
+│ 微信小程序  │─────▶│             │
+└─────────────┘      │             │
+                     │  后端 API   │─────▶ Supabase PostgreSQL
+┌─────────────┐      │ (Node.js)   │
+│  管理后台   │─────▶│   PM2       │
+│   (Vue3)    │      │   Nginx     │
+└─────────────┘      │             │
+                     └─────────────┘
+```
+
+---
+
+## 2. Supabase 数据库配置
 
 ---
 
@@ -90,7 +112,173 @@ WHERE id = '刚才创建的用户UUID';
 
 ---
 
-## 2. 管理后台本地运行
+## 3. 后端 API 部署
+
+### 3.1 服务器准备
+
+推荐配置：
+- **CPU**: 2核+
+- **内存**: 2GB+
+- **存储**: 20GB+
+- **系统**: Ubuntu 20.04 / CentOS 8+
+
+### 3.2 安装 Node.js
+
+```bash
+# Ubuntu/Debian
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# CentOS
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo yum install -y nodejs
+```
+
+### 3.3 上传项目代码
+
+```bash
+# 方式一：使用 git
+cd /var/www
+git clone <your-repo-url> health-management
+cd health-management/health-backend
+
+# 方式二：使用 scp 上传
+scp -r health-backend user@server:/var/www/health-management/
+```
+
+### 3.4 执行数据库迁移
+
+在 Supabase SQL Editor 中执行：
+
+```sql
+-- 添加 password_hash 字段
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+```
+
+或使用迁移脚本：
+
+```bash
+psql -h db.xxx.supabase.co -U postgres -d postgres -f database/migrations/add_password_hash.sql
+```
+
+### 3.5 配置环境变量
+
+```bash
+cd /var/www/health-management/health-backend
+cp .env.example .env
+nano .env
+```
+
+填入实际配置：
+
+```env
+# 数据库配置（从 Supabase 获取）
+DATABASE_URL=postgresql://postgres:[password]@db.xxx.supabase.co:5432/postgres
+
+# Supabase 配置
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# JWT 配置
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+
+# 微信小程序配置
+WECHAT_APP_ID=your-wechat-appid
+WECHAT_APP_SECRET=your-wechat-appsecret
+
+# 服务器配置
+PORT=3000
+NODE_ENV=production
+CORS_ORIGIN=*
+```
+
+### 3.6 安装依赖
+
+```bash
+npm install
+```
+
+### 3.7 安装 PM2
+
+```bash
+npm install -g pm2
+```
+
+### 3.8 启动服务
+
+```bash
+pm2 start src/app.js --name health-api
+pm2 save
+pm2 startup
+```
+
+### 3.9 配置 Nginx 反向代理
+
+创建 Nginx 配置：
+
+```bash
+sudo nano /etc/nginx/sites-available/health-api
+```
+
+```nginx
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+启用站点：
+
+```bash
+sudo ln -s /etc/nginx/sites-available/health-api /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 3.10 配置 SSL (Let's Encrypt)
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d api.yourdomain.com
+```
+
+### 3.11 PM2 常用命令
+
+```bash
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs health-api
+
+# 重启服务
+pm2 restart health-api
+
+# 停止服务
+pm2 stop health-api
+
+# 监控
+pm2 monit
+```
+
+---
+
+## 4. 管理后台部署
 
 ### 2.1 配置环境变量
 

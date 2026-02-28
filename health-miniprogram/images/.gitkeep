@@ -1,0 +1,14 @@
+# 图片资源目录
+
+请将小程序所需的图片资源放置在此目录下。
+
+所需图片列表请参考：[docs/IMAGES.md](../docs/IMAGES.md)
+
+## 快速开始
+
+在正式图标准备好之前，小程序使用emoji作为临时图标，可以正常运行。
+
+## 推荐图标资源
+
+- IconFont: https://www.iconfont.cn/
+- IconPark: https://iconpark.oceanengine.com/

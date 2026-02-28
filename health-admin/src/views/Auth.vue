@@ -249,6 +249,7 @@ import {
 import { useUserStore } from '@/stores/user'
 import { validateEmail } from '@/utils/email'
 import { sendVerificationEmail, generateVerifyCode } from '@/utils/email'
+import { authApi } from '@/api/backend'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -389,7 +390,7 @@ const handleLogin = async () => {
   loginLoading.value = true
 
   try {
-    // 检查超级管理员账号
+    // 检查超级管理员账号（演示模式）
     if (loginForm.email === 'admin@health.com' && loginForm.password === 'Admin@123') {
       const superAdmin = {
         id: 'super-admin-001',
@@ -410,7 +411,23 @@ const handleLogin = async () => {
       return
     }
 
-    // 其他用户登录 - 从 localStorage 获取注册用户
+    // 调用后端API登录
+    const result = await authApi.login({
+      email: loginForm.email,
+      password: loginForm.password
+    })
+
+    // 保存token和用户信息
+    userStore.setToken(result.token)
+    userStore.setUserInfo(result.user)
+
+    ElMessage.success('登录成功')
+    router.push('/')
+  } catch (error: any) {
+    // 如果后端调用失败，回退到本地演示模式
+    console.log('后端API调用失败，使用本地演示模式', error)
+
+    // 从 localStorage 获取注册用户
     const users = JSON.parse(localStorage.getItem('registered_users') || '[]')
     const user = users.find((u: any) => u.email === loginForm.email)
 
@@ -434,10 +451,8 @@ const handleLogin = async () => {
     userStore.setToken(token)
     userStore.setUserInfo(user)
 
-    ElMessage.success('登录成功')
+    ElMessage.success('登录成功（演示模式）')
     router.push('/')
-  } catch (error: any) {
-    ElMessage.error(error.message || '登录失败')
   } finally {
     loginLoading.value = false
   }
@@ -447,40 +462,57 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   await registerFormRef.value?.validate()
 
-  // 验证验证码
-  const storedCode = localStorage.getItem(`verify_code_${registerForm.email}`)
-  const storedTime = parseInt(localStorage.getItem(`verify_code_time_${registerForm.email}`) || '0')
-  const now = Date.now()
-
-  if (!storedCode || now - storedTime > 5 * 60 * 1000) {
-    ElMessage.error('验证码无效或已过期，请重新获取')
-    return
-  }
-
-  if (registerForm.code !== storedCode) {
-    ElMessage.error('验证码错误')
-    return
-  }
-
-  // 检查邮箱是否已注册
-  const users = JSON.parse(localStorage.getItem('registered_users') || '[]')
-  const existingUser = users.find((u: any) => u.email === registerForm.email)
-
-  if (existingUser) {
-    ElMessage.error('该邮箱已注册')
-    return
-  }
-
   registerLoading.value = true
 
   try {
+    // 调用后端API注册
+    const result = await authApi.register({
+      email: registerForm.email,
+      password: registerForm.password,
+      nickname: registerForm.nickname
+    })
+
+    // 保存token和用户信息
+    userStore.setToken(result.token)
+    userStore.setUserInfo(result.user)
+
+    ElMessage.success('注册成功')
+    router.push('/')
+  } catch (error: any) {
+    // 如果后端调用失败，回退到本地演示模式
+    console.log('后端API调用失败，使用本地演示模式', error)
+
+    // 验证验证码
+    const storedCode = localStorage.getItem(`verify_code_${registerForm.email}`)
+    const storedTime = parseInt(localStorage.getItem(`verify_code_time_${registerForm.email}`) || '0')
+    const now = Date.now()
+
+    if (!storedCode || now - storedTime > 5 * 60 * 1000) {
+      ElMessage.error('验证码无效或已过期，请重新获取')
+      return
+    }
+
+    if (registerForm.code !== storedCode) {
+      ElMessage.error('验证码错误')
+      return
+    }
+
+    // 检查邮箱是否已注册
+    const users = JSON.parse(localStorage.getItem('registered_users') || '[]')
+    const existingUser = users.find((u: any) => u.email === registerForm.email)
+
+    if (existingUser) {
+      ElMessage.error('该邮箱已注册')
+      return
+    }
+
     // 创建新用户
     const newUser = {
       id: `user_${Date.now()}`,
       email: registerForm.email,
-      password: registerForm.password, // 实际生产中应该加密
+      password: registerForm.password,
       nickname: registerForm.nickname || registerForm.email.split('@')[0],
-      role: 'user', // 普通用户
+      role: 'user',
       status: 'active',
       created_at: new Date().toISOString()
     }
@@ -498,10 +530,8 @@ const handleRegister = async () => {
     userStore.setToken(token)
     userStore.setUserInfo(newUser)
 
-    ElMessage.success('注册成功')
+    ElMessage.success('注册成功（演示模式）')
     router.push('/')
-  } catch (error: any) {
-    ElMessage.error(error.message || '注册失败')
   } finally {
     registerLoading.value = false
   }

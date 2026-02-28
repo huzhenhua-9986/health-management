@@ -45,6 +45,24 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '健康数据' }
       },
       {
+        path: 'exercise-data',
+        name: 'ExerciseData',
+        component: () => import('@/views/ExerciseData.vue'),
+        meta: { title: '运动数据' }
+      },
+      {
+        path: 'sleep-data',
+        name: 'SleepData',
+        component: () => import('@/views/SleepData.vue'),
+        meta: { title: '睡眠数据' }
+      },
+      {
+        path: 'diet-data',
+        name: 'DietData',
+        component: () => import('@/views/DietData.vue'),
+        meta: { title: '饮食记录' }
+      },
+      {
         path: 'analysis',
         name: 'Analysis',
         component: () => import('@/views/Analysis.vue'),

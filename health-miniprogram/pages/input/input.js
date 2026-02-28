@@ -1,6 +1,7 @@
 // pages/input/input.js
-const request = require('../../utils/request')
+const api = require('../../utils/request')
 const util = require('../../utils/util')
+const { cache, CacheKeys } = require('../../utils/cache')
 
 Page({
   data: {
@@ -123,17 +124,21 @@ Page({
     }
 
     try {
-      const app = getApp()
-      await request.post('health_data', {
-        user_id: app.globalData.userInfo.id,
-        data_type,
-        data_value: parseFloat(data_value),
+      wx.showLoading({ title: '保存中...' })
+
+      await api.addHealthData({
+        dataType: data_type,
+        dataValue: parseFloat(data_value),
         unit,
-        recorded_at: new Date().toISOString(),
-        source: 'manual',
-        notes
+        notes,
+        recordedAt: new Date().toISOString()
       })
 
+      // 清除相关缓存
+      cache.remove(CacheKeys.HEALTH_DATA_LIST)
+      cache.remove(CacheKeys.TODAY_HEALTH_DATA)
+
+      wx.hideLoading()
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -144,6 +149,7 @@ Page({
         'healthForm.notes': ''
       })
     } catch (err) {
+      wx.hideLoading()
       wx.showToast({
         title: '保存失败',
         icon: 'none'
@@ -164,16 +170,22 @@ Page({
     }
 
     try {
-      const app = getApp()
-      await request.post('exercise_data', {
-        user_id: app.globalData.userInfo.id,
+      wx.showLoading({ title: '保存中...' })
+
+      await api.addExerciseData({
         steps: parseInt(steps) || 0,
         distance: parseFloat(distance) || 0,
         calories: parseInt(calories) || 0,
         duration: parseInt(duration) || 0,
-        exercise_date: util.formatDate(new Date())
+        exerciseDate: util.formatDate(new Date())
       })
 
+      // 清除相关缓存
+      cache.remove(CacheKeys.EXERCISE_DATA_LIST)
+      cache.remove(CacheKeys.TODAY_EXERCISE_DATA)
+      cache.remove(CacheKeys.TODAY_HEALTH_DATA)
+
+      wx.hideLoading()
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -188,6 +200,7 @@ Page({
         }
       })
     } catch (err) {
+      wx.hideLoading()
       wx.showToast({
         title: '保存失败',
         icon: 'none'
@@ -208,16 +221,22 @@ Page({
     }
 
     try {
-      const app = getApp()
-      await request.post('sleep_data', {
-        user_id: app.globalData.userInfo.id,
-        sleep_date: util.formatDate(new Date()),
-        sleep_duration: parseInt(sleep_duration) * 60,
-        deep_sleep_duration: parseInt(deep_sleep_duration) * 60 || 0,
-        light_sleep_duration: parseInt(light_sleep_duration) * 60 || 0,
-        sleep_quality: parseInt(sleep_quality)
+      wx.showLoading({ title: '保存中...' })
+
+      await api.addSleepData({
+        sleepDate: util.formatDate(new Date()),
+        sleepDuration: parseInt(sleep_duration) * 60,
+        deepSleepDuration: parseInt(deep_sleep_duration) * 60 || 0,
+        lightSleepDuration: parseInt(light_sleep_duration) * 60 || 0,
+        sleepQuality: parseInt(sleep_quality)
       })
 
+      // 清除相关缓存
+      cache.remove(CacheKeys.SLEEP_DATA_LIST)
+      cache.remove(CacheKeys.TODAY_SLEEP_DATA)
+      cache.remove(CacheKeys.TODAY_HEALTH_DATA)
+
+      wx.hideLoading()
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -232,6 +251,7 @@ Page({
         }
       })
     } catch (err) {
+      wx.hideLoading()
       wx.showToast({
         title: '保存失败',
         icon: 'none'
@@ -252,18 +272,24 @@ Page({
     }
 
     try {
-      const app = getApp()
-      await request.post('diet_data', {
-        user_id: app.globalData.userInfo.id,
-        meal_type,
-        food_name,
+      wx.showLoading({ title: '保存中...' })
+
+      await api.addDietData({
+        mealType: meal_type,
+        foodName: food_name,
         calories: calories ? parseFloat(calories) : null,
         protein: protein ? parseFloat(protein) : null,
         fat: fat ? parseFloat(fat) : null,
         carbohydrate: carbohydrate ? parseFloat(carbohydrate) : null,
-        meal_time: new Date().toISOString()
+        mealTime: new Date().toISOString()
       })
 
+      // 清除相关缓存
+      cache.remove(CacheKeys.DIET_DATA_LIST)
+      cache.remove(CacheKeys.TODAY_DIET_DATA)
+      cache.remove(CacheKeys.TODAY_HEALTH_DATA)
+
+      wx.hideLoading()
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -280,6 +306,7 @@ Page({
         }
       })
     } catch (err) {
+      wx.hideLoading()
       wx.showToast({
         title: '保存失败',
         icon: 'none'

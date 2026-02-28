@@ -1,6 +1,27 @@
 import request from '@/utils/request'
-import { supabase } from '@/utils/supabase'
-import { isSupabaseConfigured } from '@/utils/supabase'
+
+// 认证API
+export const authApi = {
+  // 登录
+  login: async (phone: string, password: string) => {
+    return request.post('/auth/login', { phone, password })
+  },
+
+  // 注册
+  register: async (phone: string, password: string, nickname?: string) => {
+    return request.post('/auth/register', { phone, password, nickname })
+  },
+
+  // 微信登录
+  wxLogin: async (code: string) => {
+    return request.post('/auth/wx-login', { code })
+  },
+
+  // 获取当前用户信息
+  me: async () => {
+    return request.get('/auth/me')
+  }
+}
 
 // 用户管理API
 export const userApi = {
@@ -10,116 +31,33 @@ export const userApi = {
     page_size?: number
     keyword?: string
     status?: string
-    sort?: string
-    order?: string
   }) => {
-    // 演示模式：返回模拟数据
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockUsers = Array.from({ length: params.page_size || 20 }, (_, i) => ({
-        id: `demo-user-${(params.page || 1) * 20 + i}`,
-        phone: `138${String(i).padStart(8, '0')}`,
-        nickname: ['张三', '李四', '王五', '赵六', '钱七'][i % 5] + (i > 4 ? i : ''),
-        avatar_url: '',
-        gender: i % 3 === 0 ? 'male' : i % 3 === 1 ? 'female' : null,
-        height: 165 + (i % 20),
-        weight: 55 + (i % 30),
-        status: i % 5 === 0 ? 'inactive' : 'active',
-        role: i % 10 === 0 ? 'admin' : 'user',
-        created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        updated_at: new Date().toISOString()
-      }))
-      return {
-        data: mockUsers,
-        count: 1234,
-        error: null
-      }
-    }
-
-    let query = supabase
-      .from('users')
-      .select('*', { count: 'exact' })
-
-    if (params.keyword) {
-      query = query.or(`phone.ilike.%${params.keyword}%,nickname.ilike.%${params.keyword}%`)
-    }
-    if (params.status) {
-      query = query.eq('status', params.status)
-    }
-
-    const from = ((params.page || 1) - 1) * (params.page_size || 20)
-    const to = from + (params.page_size || 20) - 1
-
-    return query.range(from, to).order(params.sort || 'created_at', { ascending: params.order === 'asc' })
+    return request.get('/users', { params })
   },
 
   // 获取用户详情
   getDetail: async (id: string) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      return {
-        data: {
-          id,
-          phone: '13800138000',
-          nickname: '演示用户',
-          avatar_url: '',
-          gender: 'male',
-          birth_date: '1990-01-01',
-          height: 175,
-          weight: 70,
-          status: 'active',
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        error: null
-      }
-    }
-
-    return supabase.from('users').select('*').eq('id', id).single()
+    return request.get(`/users/${id}`)
   },
 
   // 更新用户
   update: async (id: string, data: any) => {
-    if (!isSupabaseConfigured()) {
-      return { error: null }
-    }
-    return supabase.from('users').update(data).eq('id', id)
+    return request.put(`/users/${id}`, data)
   },
 
   // 批量更新用户状态
   batchUpdateStatus: async (ids: string[], status: string) => {
-    if (!isSupabaseConfigured()) {
-      return { error: null }
-    }
-    return supabase.from('users').update({ status }).in('id', ids)
+    return request.put('/users/batch', { ids, status })
   },
 
   // 删除用户
   delete: async (id: string) => {
-    if (!isSupabaseConfigured()) {
-      return { error: null }
-    }
-    return supabase.from('users').delete().eq('id', id)
+    return request.delete(`/users/${id}`)
   },
 
   // 获取用户统计
   getStatistics: async () => {
-    if (!isSupabaseConfigured()) {
-      return {
-        total: 1234,
-        active: 892,
-        today: 45
-      }
-    }
-
-    const [{ count: total }, { count: active }, { count: today }] = await Promise.all([
-      supabase.from('users').select('*', { count: 'exact', head: true }),
-      supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', new Date().toISOString().split('T')[0])
-    ])
-
-    return { total: total || 0, active: active || 0, today: today || 0 }
+    return request.get('/dashboard/stats')
   }
 }
 
@@ -134,48 +72,22 @@ export const healthDataApi = {
     page?: number
     page_size?: number
   }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockData = Array.from({ length: params.page_size || 20 }, (_, i) => ({
-        id: `demo-health-${i}`,
-        user_id: 'demo-user-001',
-        data_type: ['blood_pressure', 'blood_sugar', 'heart_rate', 'temperature', 'weight'][i % 5],
-        data_value: Math.floor(Math.random() * 200) / 10,
-        unit: ['mmHg', 'mmol/L', 'bpm', '℃', 'kg'][i % 5],
-        recorded_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        source: i % 2 === 0 ? 'manual' : 'device',
-        notes: i % 3 === 0 ? '晨起测量' : '',
-        created_at: new Date().toISOString(),
-        users: { phone: '138****8000', nickname: '演示用户' }
-      }))
-      return {
-        data: mockData,
-        count: 5678,
-        error: null
-      }
-    }
+    return request.get('/health-data', { params })
+  },
 
-    let query = supabase
-      .from('health_data')
-      .select('*, users(phone, nickname)')
+  // 添加健康数据
+  create: async (data: any) => {
+    return request.post('/health-data', data)
+  },
 
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.data_type) {
-      query = query.eq('data_type', params.data_type)
-    }
-    if (params.start_date) {
-      query = query.gte('recorded_at', params.start_date)
-    }
-    if (params.end_date) {
-      query = query.lte('recorded_at', params.end_date)
-    }
+  // 更新健康数据
+  update: async (id: string, data: any) => {
+    return request.put(`health-data/${id}`, data)
+  },
 
-    const from = ((params.page || 1) - 1) * (params.page_size || 20)
-    const to = from + (params.page_size || 20) - 1
-
-    return query.range(from, to).order('recorded_at', { ascending: false })
+  // 删除健康数据
+  delete: async (id: string) => {
+    return request.delete(`health-data/${id}`)
   },
 
   // 获取健康数据统计
@@ -185,24 +97,6 @@ export const healthDataApi = {
     start_date?: string
     end_date?: string
   }) => {
-    if (!isSupabaseConfigured()) {
-      return {
-        period: 'week',
-        statistics: {
-          average: 120,
-          max: 140,
-          min: 100,
-          count: 50,
-          trend: 'stable'
-        },
-        daily_data: Array.from({ length: 7 }, (_, i) => ({
-          date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          value: Math.floor(Math.random() * 50) + 100,
-          count: Math.floor(Math.random() * 10) + 1
-        }))
-      }
-    }
-
     return request.get('/health-data/statistics', { params })
   },
 
@@ -218,120 +112,82 @@ export const healthDataApi = {
 
 // 运动数据API
 export const exerciseApi = {
-  getList: async (params: { user_id?: string; start_date?: string; end_date?: string }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockData = Array.from({ length: 30 }, (_, i) => ({
-        id: `demo-exercise-${i}`,
-        user_id: 'demo-user-001',
-        steps: Math.floor(Math.random() * 15000) + 5000,
-        distance: Math.floor(Math.random() * 10) / 10,
-        calories: Math.floor(Math.random() * 500) + 200,
-        duration: Math.floor(Math.random() * 120) + 30,
-        exercise_date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        device_type: i % 3 === 0 ? 'iPhone' : i % 3 === 1 ? 'Xiaomi' : 'Huawei',
-        created_at: new Date().toISOString()
-      }))
-      return {
-        data: mockData,
-        error: null
-      }
-    }
+  // 获取运动数据列表
+  getList: async (params: {
+    user_id?: string
+    start_date?: string
+    end_date?: string
+  }) => {
+    return request.get('/exercise', { params })
+  },
 
-    let query = supabase.from('exercise_data').select('*')
+  // 添加运动数据
+  create: async (data: any) => {
+    return request.post('/exercise', data)
+  },
 
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.start_date) {
-      query = query.gte('exercise_date', params.start_date)
-    }
-    if (params.end_date) {
-      query = query.lte('exercise_date', params.end_date)
-    }
+  // 更新运动数据
+  update: async (id: string, data: any) => {
+    return request.put(`exercise/${id}`, data)
+  },
 
-    return query.order('exercise_date', { ascending: false })
+  // 删除运动数据
+  delete: async (id: string) => {
+    return request.delete(`exercise/${id}`)
   }
 }
 
 // 睡眠数据API
 export const sleepApi = {
-  getList: async (params: { user_id?: string; start_date?: string; end_date?: string }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockData = Array.from({ length: 30 }, (_, i) => ({
-        id: `demo-sleep-${i}`,
-        user_id: 'demo-user-001',
-        sleep_date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        sleep_duration: Math.floor(Math.random() * 120 + 360) * 60,
-        deep_sleep_duration: Math.floor(Math.random() * 90 + 30) * 60,
-        light_sleep_duration: Math.floor(Math.random() * 180 + 120) * 60,
-        rem_sleep_duration: Math.floor(Math.random() * 60 + 30) * 60,
-        sleep_quality: Math.floor(Math.random() * 5) + 5,
-        sleep_cycles: Math.floor(Math.random() * 5) + 3,
-        created_at: new Date().toISOString()
-      }))
-      return {
-        data: mockData,
-        error: null
-      }
-    }
+  // 获取睡眠数据列表
+  getList: async (params: {
+    user_id?: string
+    start_date?: string
+    end_date?: string
+  }) => {
+    return request.get('/sleep', { params })
+  },
 
-    let query = supabase.from('sleep_data').select('*')
+  // 添加睡眠数据
+  create: async (data: any) => {
+    return request.post('/sleep', data)
+  },
 
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.start_date) {
-      query = query.gte('sleep_date', params.start_date)
-    }
-    if (params.end_date) {
-      query = query.lte('sleep_date', params.end_date)
-    }
+  // 更新睡眠数据
+  update: async (id: string, data: any) => {
+    return request.put(`sleep/${id}`, data)
+  },
 
-    return query.order('sleep_date', { ascending: false })
+  // 删除睡眠数据
+  delete: async (id: string) => {
+    return request.delete(`sleep/${id}`)
   }
 }
 
 // 饮食数据API
 export const dietApi = {
-  getList: async (params: { user_id?: string; start_date?: string; end_date?: string }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack']
-      const foods = ['米饭', '面条', '鸡蛋', '牛奶', '苹果', '鸡肉', '蔬菜', '鱼']
-      const mockData = Array.from({ length: 50 }, (_, i) => ({
-        id: `demo-diet-${i}`,
-        user_id: 'demo-user-001',
-        meal_type: mealTypes[i % 4],
-        food_name: foods[i % foods.length] + (i % 3 > 0 ? `${i % 3}` : ''),
-        calories: Math.floor(Math.random() * 500) + 200,
-        protein: Math.floor(Math.random() * 30),
-        fat: Math.floor(Math.random() * 20),
-        carbohydrate: Math.floor(Math.random() * 50),
-        fiber: Math.floor(Math.random() * 10),
-        meal_time: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString()
-      }))
-      return {
-        data: mockData,
-        error: null
-      }
-    }
+  // 获取饮食数据列表
+  getList: async (params: {
+    user_id?: string
+    start_date?: string
+    end_date?: string
+  }) => {
+    return request.get('/diet', { params })
+  },
 
-    let query = supabase.from('diet_data').select('*')
+  // 添加饮食数据
+  create: async (data: any) => {
+    return request.post('/diet', data)
+  },
 
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.start_date) {
-      query = query.gte('meal_time', params.start_date)
-    }
-    if (params.end_date) {
-      query = query.lte('meal_time', params.end_date)
-    }
+  // 更新饮食数据
+  update: async (id: string, data: any) => {
+    return request.put(`diet/${id}`, data)
+  },
 
-    return query.order('meal_time', { ascending: false })
+  // 删除饮食数据
+  delete: async (id: string) => {
+    return request.delete(`diet/${id}`)
   }
 }
 
@@ -367,41 +223,7 @@ export const reportApi = {
     page?: number
     page_size?: number
   }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockData = Array.from({ length: params.page_size || 20 }, (_, i) => ({
-        id: `demo-report-${i}`,
-        user_id: 'demo-user-001',
-        report_type: ['daily', 'weekly', 'monthly'][i % 3],
-        report_period: `${i + 1}周报告`,
-        start_date: new Date(Date.now() - (i + 1) * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        end_date: new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        content: { generated: true },
-        file_url: '',
-        generated_at: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString()
-      }))
-      return {
-        data: mockData,
-        count: 50,
-        error: null
-      }
-    }
-
-    let query = supabase
-      .from('health_reports')
-      .select('*', { count: 'exact' })
-
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.report_type) {
-      query = query.eq('report_type', params.report_type)
-    }
-
-    const from = ((params.page || 1) - 1) * (params.page_size || 20)
-    const to = from + (params.page_size || 20) - 1
-
-    return query.range(from, to).order('generated_at', { ascending: false })
+    return request.get('/reports', { params })
   },
 
   // 生成报告
@@ -415,10 +237,7 @@ export const reportApi = {
 
   // 删除报告
   delete: async (id: string) => {
-    if (!isSupabaseConfigured()) {
-      return { error: null }
-    }
-    return supabase.from('health_reports').delete().eq('id', id)
+    return request.delete(`/api/reports/${id}`)
   }
 }
 
@@ -434,52 +253,7 @@ export const logApi = {
     page?: number
     page_size?: number
   }) => {
-    if (!isSupabaseConfigured()) {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const actions = ['login', 'logout', 'create', 'update', 'delete']
-      const mockData = Array.from({ length: params.page_size || 20 }, (_, i) => ({
-        id: `demo-log-${i}`,
-        user_id: 'demo-user-001',
-        action: actions[i % actions.length],
-        resource_type: ['users', 'health_data', 'exercise_data'][i % 3],
-        resource_id: `demo-resource-${i}`,
-        ip_address: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-        user_agent: 'Mozilla/5.0...',
-        status: i % 10 === 0 ? 'failed' : 'success',
-        error_message: i % 10 === 0 ? 'Connection timeout' : '',
-        created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
-      }))
-      return {
-        data: mockData,
-        count: 234,
-        error: null
-      }
-    }
-
-    let query = supabase
-      .from('system_logs')
-      .select('*', { count: 'exact' })
-
-    if (params.user_id) {
-      query = query.eq('user_id', params.user_id)
-    }
-    if (params.action) {
-      query = query.eq('action', params.action)
-    }
-    if (params.status) {
-      query = query.eq('status', params.status)
-    }
-    if (params.start_date) {
-      query = query.gte('created_at', params.start_date)
-    }
-    if (params.end_date) {
-      query = query.lte('created_at', params.end_date)
-    }
-
-    const from = ((params.page || 1) - 1) * (params.page_size || 20)
-    const to = from + (params.page_size || 20) - 1
-
-    return query.range(from, to).order('created_at', { ascending: false })
+    return request.get('/logs', { params })
   }
 }
 
@@ -487,19 +261,16 @@ export const logApi = {
 export const dashboardApi = {
   // 获取概览数据
   getOverview: async () => {
-    // 演示模式已经在页面中处理
-    throw new Error('Use demo mode in component')
+    return request.get('/dashboard/stats')
   },
 
   // 获取用户活跃度趋势
   getUserActivityTrend: async (days: number = 7) => {
-    // 演示模式已经在页面中处理
-    throw new Error('Use demo mode in component')
+    return request.get('/dashboard/trends', { params: { days, type: 'activity' } })
   },
 
   // 获取数据采集量趋势
   getDataCollectionTrend: async (days: number = 7) => {
-    // 演示模式已经在页面中处理
-    throw new Error('Use demo mode in component')
+    return request.get('/dashboard/trends', { params: { days, type: 'collection' } })
   }
 }

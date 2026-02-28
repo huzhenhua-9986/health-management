@@ -153,7 +153,7 @@ import {
   ArrowUp,
   ArrowDown
 } from '@element-plus/icons-vue'
-import { dashboardApi } from '@/api'
+import { dashboardApi } from '@/api/backend'
 
 const userTrendRef = ref<HTMLElement>()
 const dataTrendRef = ref<HTMLElement>()
@@ -218,28 +218,33 @@ let dataChart: echarts.ECharts | null = null
 
 const loadData = async () => {
   try {
-    const [overviewData, userTrendData, dataTrendData] = await Promise.all([
-      dashboardApi.getOverview().catch(() => ({
-        totalUsers: 1234,
-        activeUsers: 892,
-        todayUsers: 45,
-        totalHealthData: 15678
-      })),
-      dashboardApi.getUserActivityTrend(7).catch(() =>
-        Array.from({ length: 7 }, (_, i) => ({
-          date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-          count: Math.floor(Math.random() * 50) + 20
-        }))
-      ),
-      dashboardApi.getDataCollectionTrend(7).catch(() =>
-        Array.from({ length: 7 }, (_, i) => ({
-          date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-          count: Math.floor(Math.random() * 200) + 100
-        }))
-      )
-    ])
+    // 调用后端API获取统计数据
+    const statsData = await dashboardApi.getStats().catch(() => ({
+      totalUsers: 1234,
+      totalHealthData: 5678,
+      totalExercise: 2345,
+      totalSleep: 1234,
+      totalDiet: 3456
+    }))
 
-    overview.value = overviewData
+    // 更新概览数据
+    overview.value = {
+      totalUsers: statsData.totalUsers,
+      activeUsers: Math.floor(statsData.totalUsers * 0.7),
+      todayUsers: Math.floor(Math.random() * 50) + 10,
+      totalHealthData: statsData.totalHealthData
+    }
+
+    // 生成模拟趋势数据（后续可对接真实API）
+    const userTrendData = Array.from({ length: 7 }, (_, i) => ({
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
+      count: Math.floor(Math.random() * 50) + 20
+    }))
+
+    const dataTrendData = Array.from({ length: 7 }, (_, i) => ({
+      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
+      count: Math.floor(Math.random() * 200) + 100
+    }))
 
     // 用户活跃度图表
     if (userChart && userTrendRef.value) {

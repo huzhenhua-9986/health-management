@@ -40,6 +40,45 @@
   opacity: 0.8;
 }
 
+/* 统计卡片 */
+.stats-card {
+  background: white;
+  border-radius: 16rpx;
+  padding: 32rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.stats-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.stat-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: #666;
+}
+
 .menu-list {
   background: white;
   border-radius: 16rpx;
@@ -87,4 +126,5 @@
   text-align: center;
   font-size: 32rpx;
   color: #f56c6c;
+  margin-top: 20rpx;
 }

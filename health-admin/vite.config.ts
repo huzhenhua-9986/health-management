@@ -13,9 +13,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://your-project.supabase.co',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        target: 'http://localhost:3002',
+        changeOrigin: true
       }
     }
   }

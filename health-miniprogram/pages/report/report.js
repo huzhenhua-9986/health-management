@@ -1,5 +1,6 @@
 // pages/report/report.js
-const request = require('../../utils/request')
+const api = require('../../utils/request')
+const { cache, CacheKeys } = require('../../utils/cache')
 
 Page({
   data: {
@@ -26,15 +27,20 @@ Page({
         return
       }
 
-      const reports = await request.get('health_reports', {
-        user_id: `eq.${app.globalData.userInfo.id}`,
-        order: 'generated_at.desc',
-        limit: 50
-      })
+      // 尝试从缓存获取
+      const cached = cache.get(CacheKeys.REPORT_LIST)
+      if (cached) {
+        this.setData({ reports: cached })
+      }
+
+      const reports = await api.getReports()
 
       this.setData({
-        reports
+        reports: reports || []
       })
+
+      // 缓存报告列表
+      cache.set(CacheKeys.REPORT_LIST, reports, app.globalData.config.cacheExpire.medium)
     } catch (err) {
       console.error('加载报告失败', err)
     }
@@ -60,7 +66,6 @@ Page({
     })
 
     try {
-      const app = getApp()
       const endDate = new Date()
       const startDate = new Date()
 
@@ -72,19 +77,11 @@ Page({
         startDate.setMonth(startDate.getMonth() - 1)
       }
 
-      const report = {
-        user_id: app.globalData.userInfo.id,
-        report_type: reportType,
-        report_period: `${startDate.toISOString().split('T')[0]} 至 ${endDate.toISOString().split('T')[0]}`,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
-        content: {
-          generated: true
-        },
-        generated_at: new Date().toISOString()
-      }
-
-      await request.post('health_reports', report)
+      await api.generateReport({
+        reportType,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      })
 
       wx.hideLoading()
       wx.showToast({
@@ -92,6 +89,7 @@ Page({
         icon: 'success'
       })
 
+      cache.remove(CacheKeys.REPORT_LIST)
       this.loadReports()
     } catch (err) {
       wx.hideLoading()
@@ -122,7 +120,11 @@ Page({
       success: async (res) => {
         if (res.confirm) {
           try {
-            await request.delete(`health_reports?id=eq.${item.id}`)
+            await api.deleteReport(item.id)
+
+            // 清除缓存
+            cache.remove(CacheKeys.REPORT_LIST)
+
             wx.showToast({
               title: '删除成功',
               icon: 'success'
@@ -147,5 +149,13 @@ Page({
       monthly: '月报'
     }
     return map[type] || type
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    cache.remove(CacheKeys.REPORT_LIST)
+    this.loadReports().then(() => {
+      wx.stopPullDownRefresh()
+    })
   }
 })

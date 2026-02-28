@@ -64,8 +64,20 @@
             <el-icon><Document /></el-icon>
             <template #title>健康数据</template>
           </el-menu-item>
-          <el-menu-item index="/analysis">
+          <el-menu-item index="/exercise-data">
             <el-icon><TrendCharts /></el-icon>
+            <template #title>运动数据</template>
+          </el-menu-item>
+          <el-menu-item index="/sleep-data">
+            <el-icon><Moon /></el-icon>
+            <template #title>睡眠数据</template>
+          </el-menu-item>
+          <el-menu-item index="/diet-data">
+            <el-icon><Coffee /></el-icon>
+            <template #title>饮食记录</template>
+          </el-menu-item>
+          <el-menu-item index="/analysis">
+            <el-icon><DataAnalysis /></el-icon>
             <template #title>数据分析</template>
           </el-menu-item>
           <el-menu-item index="/reports">
@@ -166,7 +178,9 @@ import {
   Fold,
   Bell,
   ArrowDown,
-  SwitchButton
+  SwitchButton,
+  Moon,
+  Coffee
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

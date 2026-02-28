@@ -165,7 +165,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Delete, Download, Search, Refresh, TrendCharts, DataLine, Document, Timer } from '@element-plus/icons-vue'
-import { healthDataApi } from '@/api'
+import { healthDataApi as backendApi } from '@/api/backend'
+import { healthDataApi as localApi } from '@/api'
 import dayjs from 'dayjs'
 
 const loading = ref(false)
@@ -220,26 +221,47 @@ const getDataTypeTag = (type: string) => {
 const loadData = async () => {
   loading.value = true
   try {
-    const { data, count, error } = await healthDataApi.getList({
-      data_type: queryForm.data_type || undefined,
-      start_date: dateRange.value?.[0],
-      end_date: dateRange.value?.[1],
+    // 调用后端API
+    const result = await backendApi.getList({
+      dataType: queryForm.data_type || undefined,
+      startDate: dateRange.value?.[0],
+      endDate: dateRange.value?.[1],
       page: pagination.page,
-      page_size: pagination.pageSize
+      pageSize: pagination.pageSize
     })
 
-    if (error) throw error
-    tableData.value = data || []
-    pagination.total = count || 0
+    tableData.value = result.data || []
+    pagination.total = result.total || 0
 
     // 更新统计
-    statistics.total.value = count || 0
-    const typeCount = tableData.value.filter((d: any) => d.data_type === 'blood_pressure').length
-    statistics.bloodPressure.value = typeCount
+    statistics.total.value = pagination.total
+    statistics.bloodPressure.value = tableData.value.filter((d: any) => d.data_type === 'blood_pressure').length
     statistics.bloodSugar.value = tableData.value.filter((d: any) => d.data_type === 'blood_sugar').length
     statistics.today.value = tableData.value.filter((d: any) => dayjs(d.recorded_at).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')).length
   } catch (err) {
-    ElMessage.error('加载数据失败')
+    // 回退到本地API
+    console.log('后端API调用失败，使用本地演示模式', err)
+    try {
+      const { data, count, error } = await localApi.getList({
+        data_type: queryForm.data_type || undefined,
+        start_date: dateRange.value?.[0],
+        end_date: dateRange.value?.[1],
+        page: pagination.page,
+        page_size: pagination.pageSize
+      })
+
+      if (error) throw error
+      tableData.value = data || []
+      pagination.total = count || 0
+
+      // 更新统计
+      statistics.total.value = count || 0
+      statistics.bloodPressure.value = tableData.value.filter((d: any) => d.data_type === 'blood_pressure').length
+      statistics.bloodSugar.value = tableData.value.filter((d: any) => d.data_type === 'blood_sugar').length
+      statistics.today.value = tableData.value.filter((d: any) => dayjs(d.recorded_at).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')).length
+    } catch (localErr) {
+      ElMessage.error('加载数据失败')
+    }
   } finally {
     loading.value = false
   }
@@ -270,14 +292,16 @@ const handleDelete = async (row: any) => {
   })
 
   try {
-    // 演示模式
+    // 调用后端API
+    await backendApi.delete(row.id)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (err) {
+    // 回退到演示模式
+    console.log('后端API调用失败，使用本地演示模式', err)
     tableData.value = tableData.value.filter((d: any) => d.id !== row.id)
     pagination.total--
-    ElMessage.success('删除成功')
-  } catch (err: any) {
-    if (err !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
+    ElMessage.success('删除成功（演示模式）')
   }
 }
 

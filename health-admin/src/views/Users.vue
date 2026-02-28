@@ -90,6 +90,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
+import { userApi as backendUserApi } from '@/api/backend'
 
 const router = useRouter()
 const loading = ref(false)
@@ -106,10 +107,24 @@ const pagination = reactive({
   total: 0
 })
 
-// 从 localStorage 加载注册用户
-const loadData = () => {
+// 从后端API或localStorage加载用户数据
+const loadData = async () => {
   loading.value = true
   try {
+    // 调用后端API
+    const result = await backendUserApi.getList({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: queryForm.keyword || undefined
+    })
+
+    // 转换数据格式
+    tableData.value = result.users || []
+    pagination.total = result.total || 0
+  } catch (err) {
+    // 如果后端API调用失败，回退到本地演示模式
+    console.log('后端API调用失败，使用本地演示模式', err)
+
     // 获取所有注册用户
     let users = JSON.parse(localStorage.getItem('registered_users') || '[]')
 
@@ -149,9 +164,6 @@ const loadData = () => {
     const start = (pagination.page - 1) * pagination.pageSize
     const end = start + pagination.pageSize
     tableData.value = users.slice(start, end)
-  } catch (err) {
-    ElMessage.error('加载数据失败')
-    console.error(err)
   } finally {
     loading.value = false
   }
@@ -181,21 +193,24 @@ const handleToggleStatus = async (row: any) => {
   })
 
   try {
-    // 从 localStorage 获取用户列表
+    // 尝试调用后端API
+    await backendUserApi.update(row.id, { status: newStatus })
+    ElMessage.success(`${action}成功`)
+    loadData()
+  } catch (err) {
+    // 回退到本地演示模式
+    console.log('后端API调用失败，使用本地演示模式', err)
     const users = JSON.parse(localStorage.getItem('registered_users') || '[]')
     const userIndex = users.findIndex((u: any) => u.id === row.id)
 
     if (userIndex !== -1) {
-      // 更新用户状态
       users[userIndex].status = newStatus
       localStorage.setItem('registered_users', JSON.stringify(users))
-      ElMessage.success(`${action}成功`)
+      ElMessage.success(`${action}成功（演示模式）`)
       loadData()
     } else {
       ElMessage.error('用户不存在')
     }
-  } catch (err) {
-    ElMessage.error(`${action}失败`)
   }
 }
 
@@ -205,19 +220,23 @@ const handleDelete = async (row: any) => {
   })
 
   try {
-    // 从 localStorage 获取用户列表
+    // 尝试调用后端API
+    await backendUserApi.delete(row.id)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (err) {
+    // 回退到本地演示模式
+    console.log('后端API调用失败，使用本地演示模式', err)
     const users = JSON.parse(localStorage.getItem('registered_users') || '[]')
     const filteredUsers = users.filter((u: any) => u.id !== row.id)
 
     if (filteredUsers.length < users.length) {
       localStorage.setItem('registered_users', JSON.stringify(filteredUsers))
-      ElMessage.success('删除成功')
+      ElMessage.success('删除成功（演示模式）')
       loadData()
     } else {
       ElMessage.error('用户不存在')
     }
-  } catch (err) {
-    ElMessage.error('删除失败')
   }
 }
 
