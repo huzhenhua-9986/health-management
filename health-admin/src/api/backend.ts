@@ -282,3 +282,59 @@ export const logApi = {
     }>
   }
 }
+
+// ==================== 数据分析模块 ====================
+
+export interface TrendDataPoint {
+  date: string
+  value: number
+}
+
+export interface CompareDataPoint {
+  date: string
+  steps?: number
+  sleep?: number
+  calories?: number
+}
+
+export interface DistributionItem {
+  value: number
+  name: string
+}
+
+export const analysisApi = {
+  // 获取趋势数据
+  getTrend: (type: string, days: number = 7) => {
+    return request.get('/analysis/trend', {
+      params: { type, days }
+    }) as Promise<{ dates: string[]; data: number[] }>
+  },
+
+  // 获取对比数据
+  getCompare: (types: string[], days: number = 7) => {
+    return request.get('/analysis/compare', {
+      params: { types, days }
+    }) as Promise<{ dates: string[]; data: CompareDataPoint[] }>
+  },
+
+  // 获取分布数据
+  getDistribution: (type: string) => {
+    return request.get('/analysis/distribution', {
+      params: { type }
+    }) as Promise<DistributionItem[]>
+  }
+}
+
+// 健康数据统计接口
+export const healthDataStatsApi = {
+  // 获取健康数据统计
+  getStats: () => {
+    return request.get('/health-data/stats') as Promise<{
+      total: number
+      normal: number
+      abnormal: number
+      missing: number
+      completeness: number
+    }>
+  }
+}

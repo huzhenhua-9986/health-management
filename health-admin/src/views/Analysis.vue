@@ -193,6 +193,7 @@ import {
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+import { analysisApi, healthDataStatsApi } from '@/api/backend'
 
 const trendChartRef = ref<HTMLElement>()
 const pieChartRef = ref<HTMLElement>()
@@ -268,39 +269,24 @@ let trendChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 let compareChart: echarts.ECharts | null = null
 
-const generateTrendData = () => {
-  const days = 7
-  const dates = Array.from({ length: days }, (_, i) => {
-    return dayjs().subtract(days - 1 - i, 'day').format('MM-DD')
-  })
+// 存储从API获取的真实数据
+const trendData = ref<{ dates: string[]; data: number[] } | null>(null)
+const compareData = ref<{ dates: string[]; data: any[] } | null>(null)
+const distributionDataMap = ref<Record<string, any[]>>({})
+const healthStats = ref<any>(null)
 
-  let data: number[] = []
-  let name = ''
-  let unit = ''
-  let color = ''
-
+// 根据当前类型获取配置
+const getTrendConfig = () => {
   switch (trendDataType.value) {
     case 'steps':
-      data = Array.from({ length: days }, () => Math.floor(Math.random() * 8000) + 4000)
-      name = '步数'
-      unit = '步'
-      color = '#00b4d8'
-      break
+      return { name: '步数', unit: '步', color: '#00b4d8' }
     case 'sleep':
-      data = Array.from({ length: days }, () => Math.floor(Math.random() * 3) + 6)
-      name = '睡眠时长'
-      unit = '小时'
-      color = '#7c3aed'
-      break
+      return { name: '睡眠时长', unit: '小时', color: '#7c3aed' }
     case 'calories':
-      data = Array.from({ length: days }, () => Math.floor(Math.random() * 600) + 1600)
-      name = '热量摄入'
-      unit = 'kcal'
-      color = '#f59e0b'
-      break
+      return { name: '热量摄入', unit: 'kcal', color: '#f59e0b' }
+    default:
+      return { name: '步数', unit: '步', color: '#00b4d8' }
   }
-
-  return { dates, data, name, unit, color }
 }
 
 const generateDistributionData = () => {
@@ -332,7 +318,11 @@ const generateDistributionData = () => {
 const updateTrendChart = () => {
   if (!trendChart || !trendChartRef.value) return
 
-  const { dates, data, name, unit, color } = generateTrendData()
+  const { name, unit, color } = getTrendConfig()
+
+  // 使用真实API数据或默认空数据
+  const dates = trendData.value?.dates || []
+  const data = trendData.value?.data || []
 
   trendChart.setOption({
     grid: { top: 20, right: 20, bottom: 30, left: 50 },
@@ -382,7 +372,8 @@ const updateTrendChart = () => {
 const updatePieChart = () => {
   if (!pieChart || !pieChartRef.value) return
 
-  const data = generateDistributionData()
+  // 使用真实API数据
+  const data = distributionDataMap.value[distributionType.value] || generateDistributionData()
 
   pieChart.setOption({
     tooltip: {
@@ -424,7 +415,14 @@ const updatePieChart = () => {
 const updateCompareChart = () => {
   if (!compareChart || !compareChartRef.value) return
 
-  const dates = Array.from({ length: 7 }, (_, i) => dayjs().subtract(6 - i, 'day').format('MM-DD'))
+  // 使用真实API数据
+  const dates = compareData.value?.dates || []
+  const data = compareData.value?.data || []
+
+  // 提取各指标数据
+  const stepsData = data.map((d: any) => d.steps || 0)
+  const sleepData = data.map((d: any) => d.sleep || 0)
+  const caloriesData = data.map((d: any) => d.calories || 0)
 
   compareChart.setOption({
     grid: { top: 20, right: 20, bottom: 30, left: 50 },
@@ -467,7 +465,7 @@ const updateCompareChart = () => {
       {
         name: '步数',
         type: 'bar',
-        data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 8000) + 4000),
+        data: stepsData,
         itemStyle: {
           color: {
             type: 'linear',
@@ -484,7 +482,7 @@ const updateCompareChart = () => {
         name: '睡眠',
         type: 'line',
         yAxisIndex: 1,
-        data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 3) + 6),
+        data: sleepData,
         smooth: true,
         symbolSize: 6,
         lineStyle: { width: 2, color: '#7c3aed' },
@@ -493,7 +491,7 @@ const updateCompareChart = () => {
       {
         name: '热量',
         type: 'line',
-        data: Array.from({ length: 7 }, () => Math.floor(Math.random() * 600) + 1600),
+        data: caloriesData,
         smooth: true,
         symbolSize: 6,
         lineStyle: { width: 2, color: '#f59e0b' },
@@ -511,10 +509,47 @@ const updateCharts = () => {
 
 const loadData = async () => {
   try {
-    // 模拟加载
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 并行加载所有数据
+    const [trendRes, compareRes, statsRes] = await Promise.allSettled([
+      analysisApi.getTrend(trendDataType.value, 7),
+      analysisApi.getCompare(['steps', 'sleep', 'calories'], 7),
+      healthDataStatsApi.getStats()
+    ])
+
+    // 处理趋势数据
+    if (trendRes.status === 'fulfilled') {
+      trendData.value = trendRes.value
+    }
+
+    // 处理对比数据
+    if (compareRes.status === 'fulfilled') {
+      compareData.value = compareRes.value
+    }
+
+    // 处理统计数据
+    if (statsRes.status === 'fulfilled') {
+      healthStats.value = statsRes.value
+      // 更新质量统计
+      qualityStats.value = {
+        normal: statsRes.value.normal || 0,
+        abnormal: statsRes.value.abnormal || 0,
+        missing: statsRes.value.missing || 0,
+        completeness: statsRes.value.completeness || 0
+      }
+    }
+
+    // 加载分布数据
+    try {
+      const distRes = await analysisApi.getDistribution(distributionType.value)
+      distributionDataMap.value[distributionType.value] = distRes
+    } catch (e) {
+      // 分布数据加载失败，使用默认数据
+      console.warn('分布数据加载失败，使用默认数据')
+    }
+
     updateCharts()
   } catch (err) {
+    console.error('加载数据失败:', err)
     ElMessage.error('加载数据失败')
   }
 }
@@ -534,8 +569,27 @@ const handleExport = () => {
   ElMessage.info('导出功能开发中...')
 }
 
-watch(trendDataType, () => updateTrendChart())
-watch(distributionType, () => updatePieChart())
+// 监听趋势数据类型变化，重新加载数据
+watch(trendDataType, async () => {
+  try {
+    const res = await analysisApi.getTrend(trendDataType.value, 7)
+    trendData.value = res
+    updateTrendChart()
+  } catch (err) {
+    console.error('加载趋势数据失败:', err)
+  }
+})
+
+// 监听分布类型变化，重新加载数据
+watch(distributionType, async () => {
+  try {
+    const res = await analysisApi.getDistribution(distributionType.value)
+    distributionDataMap.value[distributionType.value] = res
+    updatePieChart()
+  } catch (err) {
+    console.error('加载分布数据失败:', err)
+  }
+})
 
 onMounted(() => {
   if (trendChartRef.value) trendChart = echarts.init(trendChartRef.value)
