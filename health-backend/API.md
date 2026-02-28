@@ -180,6 +180,35 @@ GET /api/health-data/statistics?data_type=blood_sugar
 GET /api/health-data/trends?data_type=blood_sugar&days=7
 ```
 
+### 2.7 获取健康数据统计 (管理员)
+```
+GET /api/health-data/stats
+```
+**需要认证，需要管理员权限**
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "totalCount": 1234,
+    "todayCount": 45,
+    "byType": {
+      "bloodPressure": 234,
+      "heartRate": 345,
+      "bloodSugar": 267,
+      "temperature": 156,
+      "weight": 232
+    },
+    "avgValues": {
+      "bloodPressure": "125/82",
+      "heartRate": 76,
+      "bloodSugar": 5.6
+    }
+  }
+}
+```
+
 ---
 
 ## 3. 运动数据模块 `/api/exercise`
@@ -344,6 +373,31 @@ GET /api/users?page=1&page_size=20&keyword=张三&status=active
 GET /api/users/:id
 ```
 
+**响应** (增强版):
+```json
+{
+  "success": true,
+  "data": {
+    "id": "xxx",
+    "phone": "13800138000",
+    "nickname": "张三",
+    "avatar_url": "",
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "stats": {
+      "healthDataCount": 25,
+      "exerciseDataCount": 18,
+      "sleepDataCount": 30,
+      "dietDataCount": 45,
+      "reportCount": 5,
+      "lastActiveAt": "2024-02-28T10:00:00Z",
+      "avgHealthScore": 75,
+      "totalExerciseDays": 45
+    }
+  }
+}
+```
+
 ### 7.3 更新用户
 ```
 PUT /api/users/:id
@@ -416,19 +470,180 @@ GET /api/logs?page=1&page_size=20&action=login&status=success
 
 ## 9. 仪表盘模块 `/api/dashboard` (管理员)
 
-### 9.1 获取概览
+### 9.1 获取统计数据 (新增)
+```
+GET /api/dashboard/stats
+```
+**需要认证，需要管理员权限**
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "totalUsers": 1234,
+    "activeUsers": 567,
+    "todayUsers": 12,
+    "totalHealth": 4567,
+    "totalExercise": 2345,
+    "totalSleep": 3456,
+    "totalDiet": 5678
+  }
+}
+```
+
+**字段说明**:
+| 字段 | 说明 |
+|------|------|
+| totalUsers | 总用户数 |
+| activeUsers | 活跃用户数(7天内有登录) |
+| todayUsers | 今日新增用户 |
+| totalHealth | 健康数据总数 |
+| totalExercise | 运动数据总数 |
+| totalSleep | 睡眠数据总数 |
+| totalDiet | 饮食记录总数 |
+
+### 9.2 获取概览
 ```
 GET /api/dashboard/overview
 ```
 
-### 9.2 用户活跃度趋势
+### 9.3 用户活跃度趋势
 ```
-GET /api/dashboard/user-activity-trend?days=7
+GET /api/dashboard/user-trend?days=7
+```
+**需要认证，需要管理员权限**
+
+**查询参数**:
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| days | number | 7 | 查询天数(1-90) |
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": [
+    { "date": "2024-01-01", "count": 45 },
+    { "date": "2024-01-02", "count": 52 }
+  ]
+}
 ```
 
-### 9.3 数据采集趋势
+### 9.4 数据采集趋势
 ```
-GET /api/dashboard/data-collection-trend?days=7
+GET /api/dashboard/data-trend?days=7&dataType=all
+```
+**需要认证，需要管理员权限**
+
+**查询参数**:
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| days | number | 7 | 查询天数(1-90) |
+| dataType | string | all | 数据类型: all/health/exercise/sleep/diet |
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "health_data": [
+      { "date": "2024-01-01", "count": 120 }
+    ],
+    "exercise_data": [
+      { "date": "2024-01-01", "count": 85 }
+    ],
+    "sleep_data": [
+      { "date": "2024-01-01", "count": 92 }
+    ],
+    "diet_data": [
+      { "date": "2024-01-01", "count": 256 }
+    ]
+  }
+}
+```
+
+---
+
+## 10. 数据分析模块 `/api/analysis` (管理员)
+
+### 10.1 获取趋势数据
+```
+GET /api/analysis/trend?type=steps&days=7
+```
+**需要认证，需要管理员权限**
+
+**查询参数**:
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| type | string | steps | 数据类型: steps/sleep/calories/distance/weight/bloodPressure/heartRate/bloodSugar |
+| days | number | 7 | 查询天数(1-365) |
+| userId | string | - | 用户ID（可选） |
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "type": "steps",
+    "unit": "步",
+    "dates": ["02-21", "02-22", "02-23", "02-24", "02-25", "02-26", "02-27"],
+    "values": [5234, 6123, 5890, 7123, 6543, 7234, 6890],
+    "avg": 6420,
+    "max": 7234,
+    "min": 5234
+  }
+}
+```
+
+### 10.2 获取对比数据
+```
+GET /api/analysis/compare?types=steps,sleep,calories&days=7
+```
+**需要认证，需要管理员权限**
+
+**查询参数**:
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| types | string/array | 要对比的数据类型，多个用逗号分隔 |
+| days | number | 查询天数 |
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "dates": ["02-21", "02-22", "02-23", "02-24", "02-25", "02-26", "02-27"],
+    "series": [
+      { "name": "步数", "data": [5234, 6123, 5890, 7123, 6543, 7234, 6890] },
+      { "name": "睡眠时长", "data": [7.5, 6.8, 7.2, 8.0, 7.1, 7.8, 7.4] },
+      { "name": "消耗热量", "data": [1856, 2034, 1923, 2156, 1987, 2234, 2056] }
+    ]
+  }
+}
+```
+
+### 10.3 获取分布统计
+```
+GET /api/analysis/distribution?type=bloodPressure
+```
+**需要认证，需要管理员权限**
+
+**查询参数**:
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| type | string | bloodPressure | 类型: bloodPressure/heartRate/bloodSugar/steps/sleep |
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "ranges": ["<90", "90-120", "120-140", ">140"],
+    "counts": [15, 45, 25, 8],
+    "labels": ["偏低", "正常", "偏高", "高"]
+  }
+}
 ```
 
 ---

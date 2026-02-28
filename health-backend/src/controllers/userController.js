@@ -1,6 +1,7 @@
 // 用户管理控制器
 import { User } from '../models/User.js'
 import { SystemLog } from '../models/SystemLog.js'
+import { query } from '../config/database.js'
 import { success, error, paginated } from '../utils/response.js'
 
 /**
@@ -43,10 +44,54 @@ export async function getOne(req, res) {
       return error(res, 404, '用户不存在')
     }
 
+    // 获取用户统计数据
+    const [
+      healthDataCount,
+      exerciseDataCount,
+      sleepDataCount,
+      dietDataCount,
+      reportCount,
+      lastActiveResult,
+      exerciseDaysResult
+    ] = await Promise.all([
+      query('SELECT COUNT(*) FROM health_data WHERE user_id = $1', [id]),
+      query('SELECT COUNT(*) FROM exercise_data WHERE user_id = $1', [id]),
+      query('SELECT COUNT(*) FROM sleep_data WHERE user_id = $1', [id]),
+      query('SELECT COUNT(*) FROM diet_data WHERE user_id = $1', [id]),
+      query('SELECT COUNT(*) FROM health_reports WHERE user_id = $1', [id]),
+      query(`
+        SELECT created_at
+        FROM system_logs
+        WHERE user_id = $1 AND action = 'login'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [id]),
+      query(`
+        SELECT COUNT(DISTINCT exercise_date) as days
+        FROM exercise_data
+        WHERE user_id = $1
+      `, [id])
+    ])
+
+    const stats = {
+      healthDataCount: parseInt(healthDataCount.rows[0].count) || 0,
+      exerciseDataCount: parseInt(exerciseDataCount.rows[0].count) || 0,
+      sleepDataCount: parseInt(sleepDataCount.rows[0].count) || 0,
+      dietDataCount: parseInt(dietDataCount.rows[0].count) || 0,
+      reportCount: parseInt(reportCount.rows[0].count) || 0,
+      lastActiveAt: lastActiveResult.rows[0]?.created_at || user.created_at,
+      avgHealthScore: 75, // 可以根据实际业务逻辑计算
+      totalExerciseDays: parseInt(exerciseDaysResult.rows[0]?.days) || 0
+    }
+
     // 返回用户信息（不包含密码）
     const { password_hash, ...userWithoutPassword } = user
-    return success(res, userWithoutPassword)
+    return success(res, {
+      ...userWithoutPassword,
+      stats
+    })
   } catch (err) {
+    console.error('获取用户信息失败:', err)
     return error(res, 500, '获取用户信息失败')
   }
 }

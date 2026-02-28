@@ -153,7 +153,7 @@ import {
   ArrowUp,
   ArrowDown
 } from '@element-plus/icons-vue'
-import { dashboardApi } from '@/api/backend'
+import { dashboardApi, type TrendDataPoint } from '@/api/backend'
 
 const userTrendRef = ref<HTMLElement>()
 const dataTrendRef = ref<HTMLElement>()
@@ -164,6 +164,10 @@ const overview = ref({
   todayUsers: 0,
   totalHealthData: 0
 })
+
+// 趋势数据
+const userTrendData = ref<TrendDataPoint[]>([])
+const dataTrendData = ref<TrendDataPoint[]>([])
 
 // 统计卡片数据
 const stats = computed(() => [
@@ -218,36 +222,36 @@ let dataChart: echarts.ECharts | null = null
 
 const loadData = async () => {
   try {
-    // 调用后端API获取统计数据
-    const statsData = await dashboardApi.getStats().catch(() => ({
-      totalUsers: 1234,
-      totalHealthData: 5678,
-      totalExercise: 2345,
-      totalSleep: 1234,
-      totalDiet: 3456
-    }))
+    // 并行请求所有数据
+    const [statsData, userTrend, dataTrend] = await Promise.all([
+      dashboardApi.getStats().catch(() => ({
+        totalUsers: 0,
+        activeUsers: 0,
+        todayUsers: 0,
+        totalHealth: 0,
+        totalExercise: 0,
+        totalSleep: 0,
+        totalDiet: 0
+      })),
+      dashboardApi.getUserTrend(7).catch(() => []),
+      dashboardApi.getDataTrend(7, 'all').catch(() => [])
+    ])
 
-    // 更新概览数据
+    // 更新概览数据（使用真实API返回的数据）
     overview.value = {
       totalUsers: statsData.totalUsers,
-      activeUsers: Math.floor(statsData.totalUsers * 0.7),
-      todayUsers: Math.floor(Math.random() * 50) + 10,
-      totalHealthData: statsData.totalHealthData
+      activeUsers: statsData.activeUsers,
+      todayUsers: statsData.todayUsers,
+      totalHealthData: statsData.totalHealth
     }
 
-    // 生成模拟趋势数据（后续可对接真实API）
-    const userTrendData = Array.from({ length: 7 }, (_, i) => ({
-      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-      count: Math.floor(Math.random() * 50) + 20
-    }))
-
-    const dataTrendData = Array.from({ length: 7 }, (_, i) => ({
-      date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-      count: Math.floor(Math.random() * 200) + 100
-    }))
+    // 更新趋势数据（使用真实API返回的数据）
+    userTrendData.value = userTrend
+    dataTrendData.value = dataTrend
 
     // 用户活跃度图表
     if (userChart && userTrendRef.value) {
+      const chartData = userTrendData.value
       userChart.setOption({
         grid: { top: 20, right: 20, bottom: 30, left: 40 },
         tooltip: {
@@ -261,7 +265,7 @@ const loadData = async () => {
         },
         xAxis: {
           type: 'category',
-          data: userTrendData.map((d: any) => d.date.slice(5)),
+          data: chartData.map((d) => d.date.slice(5)),
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: { color: '#94a3b8', fontSize: 12 }
@@ -274,7 +278,7 @@ const loadData = async () => {
           axisLabel: { color: '#94a3b8', fontSize: 12 }
         },
         series: [{
-          data: userTrendData.map((d: any) => d.count),
+          data: chartData.map((d) => d.count),
           type: 'line',
           smooth: true,
           symbolSize: 8,
@@ -310,6 +314,7 @@ const loadData = async () => {
 
     // 数据采集量图表
     if (dataChart && dataTrendRef.value) {
+      const chartData = dataTrendData.value
       dataChart.setOption({
         grid: { top: 20, right: 20, bottom: 30, left: 40 },
         tooltip: {
@@ -323,7 +328,7 @@ const loadData = async () => {
         },
         xAxis: {
           type: 'category',
-          data: dataTrendData.map((d: any) => d.date.slice(5)),
+          data: chartData.map((d) => d.date.slice(5)),
           axisLine: { show: false },
           axisTick: { show: false },
           axisLabel: { color: '#94a3b8', fontSize: 12 }
@@ -336,7 +341,7 @@ const loadData = async () => {
           axisLabel: { color: '#94a3b8', fontSize: 12 }
         },
         series: [{
-          data: dataTrendData.map((d: any) => d.count),
+          data: chartData.map((d) => d.count),
           type: 'bar',
           barWidth: '50%',
           itemStyle: {

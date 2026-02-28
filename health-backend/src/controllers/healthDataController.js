@@ -1,6 +1,7 @@
 // 健康数据控制器
 import { HealthData } from '../models/HealthData.js'
 import { SystemLog } from '../models/SystemLog.js'
+import { query } from '../config/database.js'
 import { success, error, paginated } from '../utils/response.js'
 
 /**
@@ -187,5 +188,98 @@ export async function getTrends(req, res) {
     return success(res, trends)
   } catch (err) {
     return error(res, 500, '获取趋势数据失败')
+  }
+}
+
+/**
+ * 获取健康数据统计（管理员）
+ * GET /api/health-data/stats
+ */
+export async function getHealthStats(req, res) {
+  try {
+    // 只有管理员可以访问
+    if (req.user.role !== 'admin') {
+      return error(res, 403, '需要管理员权限')
+    }
+
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    // 并行查询统计数据
+    const [
+      totalCountResult,
+      todayCountResult,
+      bloodPressureResult,
+      heartRateResult,
+      bloodSugarResult,
+      temperatureResult,
+      weightResult
+    ] = await Promise.all([
+      query('SELECT COUNT(*) FROM health_data'),
+      query('SELECT COUNT(*) FROM health_data WHERE created_at >= $1', [todayStart]),
+      // 血压平均值
+      query(`
+        SELECT AVG(data_value::float) as avg_val
+        FROM health_data
+        WHERE data_type = 'blood_pressure_systolic'
+      `),
+      query(`
+        SELECT AVG(data_value::float) as avg_val
+        FROM health_data
+        WHERE data_type = 'heart_rate'
+      `),
+      query(`
+        SELECT AVG(data_value::float) as avg_val
+        FROM health_data
+        WHERE data_type = 'blood_sugar'
+      `),
+      query(`
+        SELECT COUNT(*) FROM health_data WHERE data_type = 'temperature'
+      `),
+      query(`
+        SELECT COUNT(*) FROM health_data WHERE data_type = 'weight'
+      `)
+    ])
+
+    // 按类型统计
+    const [bpSystolic, bpDiastolic, hr, bs, temp, weight] = await Promise.all([
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'blood_pressure_systolic'"),
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'blood_pressure_diastolic'"),
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'heart_rate'"),
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'blood_sugar'"),
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'temperature'"),
+      query("SELECT COUNT(*) FROM health_data WHERE data_type = 'weight'")
+    ])
+
+    // 计算舒张压平均值
+    const bpDiastolicAvg = await query(`
+      SELECT AVG(data_value::float) as avg_val
+      FROM health_data
+      WHERE data_type = 'blood_pressure_diastolic'
+    `)
+
+    const byType = {
+      bloodPressure: parseInt(bpSystolic.rows[0].count) + parseInt(bpDiastolic.rows[0].count),
+      heartRate: parseInt(hr.rows[0].count),
+      bloodSugar: parseInt(bs.rows[0].count),
+      temperature: parseInt(temp.rows[0].count),
+      weight: parseInt(weight.rows[0].count)
+    }
+
+    const avgValues = {
+      bloodPressure: `${Math.round(bloodPressureResult.rows[0].avg_val || 0)}/${Math.round(bpDiastolicAvg.rows[0].avg_val || 0)}`,
+      heartRate: Math.round(heartRateResult.rows[0].avg_val || 0),
+      bloodSugar: parseFloat((bloodSugarResult.rows[0].avg_val || 0).toFixed(1))
+    }
+
+    return success(res, {
+      totalCount: parseInt(totalCountResult.rows[0].count),
+      todayCount: parseInt(todayCountResult.rows[0].count),
+      byType,
+      avgValues
+    })
+  } catch (err) {
+    console.error('获取健康数据统计失败:', err)
+    return error(res, 500, '获取统计数据失败')
   }
 }

@@ -38,16 +38,39 @@ export const authApi = {
 
 // ==================== 仪表盘模块 ====================
 
+export interface DashboardStats {
+  totalUsers: number
+  activeUsers: number
+  todayUsers: number
+  totalHealth: number
+  totalExercise: number
+  totalSleep: number
+  totalDiet: number
+}
+
+export interface TrendDataPoint {
+  date: string
+  count: number
+}
+
 export const dashboardApi = {
   // 获取统计数据
   getStats: () => {
-    return request.get('/dashboard/stats') as Promise<{
-      totalUsers: number
-      totalHealthData: number
-      totalExercise: number
-      totalSleep: number
-      totalDiet: number
-    }>
+    return request.get('/dashboard/stats') as Promise<DashboardStats>
+  },
+
+  // 获取用户活跃度趋势
+  getUserTrend: (days: number = 7) => {
+    return request.get('/dashboard/user-trend', {
+      params: { days }
+    }) as Promise<TrendDataPoint[]>
+  },
+
+  // 获取数据采集量趋势
+  getDataTrend: (days: number = 7, dataType: string = 'all') => {
+    return request.get('/dashboard/data-trend', {
+      params: { days, dataType }
+    }) as Promise<TrendDataPoint[]>
   }
 }
 

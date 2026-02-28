@@ -9,6 +9,7 @@ import dietRoutes from './diet.js'
 import reportRoutes from './reports.js'
 import logRoutes from './logs.js'
 import dashboardRoutes from './dashboard.js'
+import analysisRoutes from './analysis.js'
 
 const router = express.Router()
 
@@ -27,5 +28,6 @@ router.use('/diet', dietRoutes)
 router.use('/reports', reportRoutes)
 router.use('/logs', logRoutes)
 router.use('/dashboard', dashboardRoutes)
+router.use('/analysis', analysisRoutes)
 
 export default router
